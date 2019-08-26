@@ -130,21 +130,26 @@ public final class Version {
         }
     }
 
+    /**
+     * 获取版本号
+     */
     public static String getVersion(Class<?> cls, String defaultVersion) {
         try {
-            // find version info from MANIFEST.MF first
+            // find version info from MANIFEST.MF first，从中找Implementation-Version => Specification-Version
             String version = cls.getPackage().getImplementationVersion();
             if (version == null || version.length() == 0) {
                 version = cls.getPackage().getSpecificationVersion();
             }
+
+
             if (version == null || version.length() == 0) {
-                // guess version fro jar file name if nothing's found from MANIFEST.MF
+                // guess version fro jar file name if nothing's found from MANIFEST.MF，从jar的版本号中获取
                 CodeSource codeSource = cls.getProtectionDomain().getCodeSource();
                 if (codeSource == null) {
                     logger.info("No codeSource for class " + cls.getName() + " when getVersion, use default version " + defaultVersion);
                 } else {
                     String file = codeSource.getLocation().getFile();
-                    if (file != null && file.length() > 0 && file.endsWith(".jar")) {
+                    if (file != null && file.length() > 0 && file.endsWith(".jar")) {  //jar包名
                         file = file.substring(0, file.length() - 4);
                         int i = file.lastIndexOf('/');
                         if (i >= 0) {
@@ -166,7 +171,7 @@ public final class Version {
                     }
                 }
             }
-            // return default version if no version info is found
+            // return default version if no version info is found。没有找到版本号，使用默认的
             return version == null || version.length() == 0 ? defaultVersion : version;
         } catch (Throwable e) {
             // return default version when any exception is thrown

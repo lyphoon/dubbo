@@ -38,6 +38,8 @@ import java.util.regex.Pattern;
 /**
  * Utility methods and public methods for parsing configuration
  *
+ * API配置
+ *
  * @export
  */
 public abstract class AbstractConfig implements Serializable {
@@ -89,29 +91,38 @@ public abstract class AbstractConfig implements Serializable {
         return value;
     }
 
+    /**
+     * 将配置中的key-value设置到具体的config中
+     *
+     * 1. 找出所有的Conifg字段（通过set方法）
+     * 2. 取key的值
+     *      2.1  从命令行获取取
+     *      2.2  get为空（APIConfig是可以用set直接设置值的，如果设置了，get方法不为空），从配置文件中取值
+     * 3. 调用set方法
+     */
     protected static void appendProperties(AbstractConfig config) {
         if (config == null) {
             return;
         }
-        String prefix = "dubbo." + getTagName(config.getClass()) + ".";
+        String prefix = "dubbo." + getTagName(config.getClass()) + ".";  //前缀
         Method[] methods = config.getClass().getMethods();
         for (Method method : methods) {
             try {
                 String name = method.getName();
                 if (name.length() > 3 && name.startsWith("set") && Modifier.isPublic(method.getModifiers())
-                        && method.getParameterTypes().length == 1 && isPrimitive(method.getParameterTypes()[0])) {
+                        && method.getParameterTypes().length == 1 && isPrimitive(method.getParameterTypes()[0])) {  //公共的set开头的，只有一个参数，参数为元类型
                     String property = StringUtils.camelToSplitName(name.substring(3, 4).toLowerCase() + name.substring(4), ".");
 
                     String value = null;
-                    if (config.getId() != null && config.getId().length() > 0) {
-                        String pn = prefix + config.getId() + "." + property;
-                        value = System.getProperty(pn);
+                    if (config.getId() != null && config.getId().length() > 0) { //config可以配置一个id
+                        String pn = prefix + config.getId() + "." + property;  //有id时，前缀+id+字段名
+                        value = System.getProperty(pn);  //从系统参数（命令行）取参数的值
                         if (!StringUtils.isBlank(value)) {
                             logger.info("Use System Property " + pn + " to config dubbo");
                         }
                     }
                     if (value == null || value.length() == 0) {
-                        String pn = prefix + property;
+                        String pn = prefix + property;  //前缀+字段名
                         value = System.getProperty(pn);
                         if (!StringUtils.isBlank(value)) {
                             logger.info("Use System Property " + pn + " to config dubbo");
@@ -119,6 +130,7 @@ public abstract class AbstractConfig implements Serializable {
                     }
                     if (value == null || value.length() == 0) {
                         Method getter;
+                        //get有两类，"get"/"is"+字段名
                         try {
                             getter = config.getClass().getMethod("get" + name.substring(3));
                         } catch (NoSuchMethodException e) {
@@ -129,7 +141,7 @@ public abstract class AbstractConfig implements Serializable {
                             }
                         }
                         if (getter != null) {
-                            if (getter.invoke(config) == null) {
+                            if (getter.invoke(config) == null) { //get方法返回空（配置在xml中），从配置文件中取
                                 if (config.getId() != null && config.getId().length() > 0) {
                                     value = ConfigUtils.getProperty(prefix + config.getId() + "." + property);
                                 }
@@ -137,7 +149,7 @@ public abstract class AbstractConfig implements Serializable {
                                     value = ConfigUtils.getProperty(prefix + property);
                                 }
                                 if (value == null || value.length() == 0) {
-                                    String legacyKey = legacyProperties.get(prefix + property);
+                                    String legacyKey = legacyProperties.get(prefix + property);  //老版的key转换
                                     if (legacyKey != null && legacyKey.length() > 0) {
                                         value = convertLegacyValue(legacyKey, ConfigUtils.getProperty(legacyKey));
                                     }
@@ -147,7 +159,7 @@ public abstract class AbstractConfig implements Serializable {
                         }
                     }
                     if (value != null && value.length() > 0) {
-                        method.invoke(config, convertPrimitive(method.getParameterTypes()[0], value));
+                        method.invoke(config, convertPrimitive(method.getParameterTypes()[0], value));  //method.invoke第二个参数为参数类型??, method.invoke(config, value));
                     }
                 }
             } catch (Exception e) {
@@ -172,6 +184,9 @@ public abstract class AbstractConfig implements Serializable {
         appendParameters(parameters, config, null);
     }
 
+    /**
+     * 将配置对象的属性，添加到参数集合
+     */
     @SuppressWarnings("unchecked")
     protected static void appendParameters(Map<String, String> parameters, Object config, String prefix) {
         if (config == null) {
@@ -185,21 +200,24 @@ public abstract class AbstractConfig implements Serializable {
                         && !"getClass".equals(name)
                         && Modifier.isPublic(method.getModifiers())
                         && method.getParameterTypes().length == 0
-                        && isPrimitive(method.getReturnType())) {
-                    Parameter parameter = method.getAnnotation(Parameter.class);
-                    if (method.getReturnType() == Object.class || parameter != null && parameter.excluded()) {
+                        && isPrimitive(method.getReturnType())) {  //取字段的获取值方法
+                    Parameter parameter = method.getAnnotation(Parameter.class);  //@Parameter注解
+                    if (method.getReturnType() == Object.class || (parameter != null && parameter.excluded())) {
                         continue;
                     }
-                    int i = name.startsWith("get") ? 3 : 2;
-                    String prop = StringUtils.camelToSplitName(name.substring(i, i + 1).toLowerCase() + name.substring(i + 1), ".");
+                    int i = name.startsWith("get") ? 3 : 2;  //get/is
+                    String prop = StringUtils.camelToSplitName(name.substring(i, i + 1).toLowerCase() + name.substring(i + 1), ".");  //属性
+
+                    //map中key处理
                     String key;
-                    if (parameter != null && parameter.key().length() > 0) {
+                    if (parameter != null && parameter.key().length() > 0) {  //@Parameter注解中有key
                         key = parameter.key();
                     } else {
                         key = prop;
                     }
-                    Object value = method.invoke(config);
-                    String str = String.valueOf(value).trim();
+
+                    Object value = method.invoke(config);  //调用get方法
+                    String str = String.valueOf(value).trim();  //String.valueOf(value), 当value为空时，返回"null"
                     if (value != null && str.length() > 0) {
                         if (parameter != null && parameter.escaped()) {
                             str = URL.encode(str);
@@ -243,6 +261,14 @@ public abstract class AbstractConfig implements Serializable {
         appendAttributes(parameters, config, null);
     }
 
+    /**
+     * 将注解中的key-value放置在parameters中，其中Config中的get/is方法有@Parameter注解，@Parameter中有attribute
+     *
+     * 只在MethodConfig类中，它主要用于事件通知中：
+     * <dubbo:reference id="demoService" interface="org.apache.dubbo.callback.implicit.IDemoService" version="1.0.0" group="cn" >
+     *       <dubbo:method name="get" async="true" onreturn = "demoCallback.onreturn" onthrow="demoCallback.onthrow" />
+     * </dubbo:reference>
+     */
     protected static void appendAttributes(Map<Object, Object> parameters, Object config, String prefix) {
         if (config == null) {
             return;

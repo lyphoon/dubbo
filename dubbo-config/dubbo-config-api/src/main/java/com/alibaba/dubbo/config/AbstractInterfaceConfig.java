@@ -158,8 +158,12 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         }
     }
 
+    /**
+     * 将ServiceConfig拼接成URL：dubbo://192.168.1.7:9090/com.alibaba.service1?param1=value1&param2=value2
+     */
     protected List<URL> loadRegistries(boolean provider) {
-        checkRegistry();
+        checkRegistry();  //校验注册中心，将注册中心（可能有多个）拼接成RegistryConfig，并设置相应的属性
+
         List<URL> registryList = new ArrayList<URL>();
         if (registries != null && !registries.isEmpty()) {
             for (RegistryConfig config : registries) {
@@ -167,14 +171,16 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                 if (address == null || address.length() == 0) {
                     address = Constants.ANYHOST_VALUE;
                 }
-                String sysaddress = System.getProperty("dubbo.registry.address");
+
+                String sysaddress = System.getProperty("dubbo.registry.address");  //命令行
                 if (sysaddress != null && sysaddress.length() > 0) {
                     address = sysaddress;
                 }
+
                 if (address.length() > 0 && !RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
                     Map<String, String> map = new HashMap<String, String>();
-                    appendParameters(map, application);
-                    appendParameters(map, config);
+                    appendParameters(map, application);  //将ApplicationConfig中的属性-属性值放置在map中
+                    appendParameters(map, config);  //将RegistryConfig中的属性-属性值放置在map中
                     map.put("path", RegistryService.class.getName());
                     map.put("dubbo", Version.getProtocolVersion());
                     map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis()));
@@ -188,11 +194,13 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                             map.put("protocol", "dubbo");
                         }
                     }
+
+                    //将它拼接为了一个URL, 其中使用了URL构造函数：new URL(protocol, username, password, host, port, path, parameters);
                     List<URL> urls = UrlUtils.parseURLs(address, map);
                     for (URL url : urls) {
                         url = url.addParameter(Constants.REGISTRY_KEY, url.getProtocol());
                         url = url.setProtocol(Constants.REGISTRY_PROTOCOL);
-                        if ((provider && url.getParameter(Constants.REGISTER_KEY, true))
+                        if ((provider && url.getParameter(Constants.REGISTER_KEY, true))  //如果是服务提供者或者消费者
                                 || (!provider && url.getParameter(Constants.SUBSCRIBE_KEY, true))) {
                             registryList.add(url);
                         }
@@ -257,6 +265,11 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         return null;
     }
 
+    /**
+     * 校验方法（接口）
+     *
+     * 接中Class要存在， 方法名不为空，方法要在接口中进行定义
+     */
     protected void checkInterfaceAndMethods(Class<?> interfaceClass, List<MethodConfig> methods) {
         // interface cannot be null
         if (interfaceClass == null) {
@@ -293,7 +306,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             return;
         }
 
-        String normalizedMock = MockInvoker.normalizeMock(mock);
+        String normalizedMock = MockInvoker.normalizeMock(mock);  //取mock字符串
         if (normalizedMock.startsWith(Constants.RETURN_PREFIX)) {
             normalizedMock = normalizedMock.substring(Constants.RETURN_PREFIX.length()).trim();
             try {

@@ -34,12 +34,16 @@ public @interface Parameter {
 
     boolean required() default false;
 
+    //排除
     boolean excluded() default false;
 
+    //加密
     boolean escaped() default false;
 
+    //属性
     boolean attribute() default false;
 
+    //x=1,2之类的
     boolean append() default false;
 
 }

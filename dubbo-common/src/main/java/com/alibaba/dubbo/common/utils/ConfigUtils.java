@@ -140,6 +140,9 @@ public class ConfigUtils {
         return sb.toString();
     }
 
+    /**
+     * 获取dubbo配置文件并加载为Properties, 配置文件的位置可以在命令行中 -》 系统环境中 -》 默认
+     */
     public static Properties getProperties() {
         if (PROPERTIES == null) {
             synchronized (ConfigUtils.class) {
