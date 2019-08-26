@@ -63,8 +63,7 @@ import static com.alibaba.dubbo.common.utils.NetUtils.isInvalidLocalHost;
 import static com.alibaba.dubbo.common.utils.NetUtils.isInvalidPort;
 
 /**
- * ServiceConfig
- *
+ * ServiceConfig， 它还是一个泛型
  * @export
  */
 public class ServiceConfig<T> extends AbstractServiceConfig {
@@ -423,7 +422,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
 
         Map<String, String> map = new HashMap<String, String>();
-        map.put(Constants.SIDE_KEY, Constants.PROVIDER_SIDE);
+        map.put(Constants.SIDE_KEY, Constants.PROVIDER_SIDE);  //side为provider这边
         map.put(Constants.DUBBO_VERSION_KEY, Version.getProtocolVersion());
         map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis()));
         if (ConfigUtils.getPid() > 0) {

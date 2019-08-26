@@ -159,7 +159,11 @@ public abstract class AbstractConfig implements Serializable {
                         }
                     }
                     if (value != null && value.length() > 0) {
-                        method.invoke(config, convertPrimitive(method.getParameterTypes()[0], value));  //method.invoke第二个参数为参数类型??, method.invoke(config, value));
+                        /**
+                         *  以上所有代码都是为了执行它
+                         *  method.invoke第二个参数为参数类型??, method.invoke(config, value));
+                         */
+                        method.invoke(config, convertPrimitive(method.getParameterTypes()[0], value));
                     }
                 }
             } catch (Exception e) {

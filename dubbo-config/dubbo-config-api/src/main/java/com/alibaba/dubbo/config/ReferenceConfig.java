@@ -56,7 +56,7 @@ import java.util.Properties;
 import static com.alibaba.dubbo.common.utils.NetUtils.isInvalidLocalHost;
 
 /**
- * ReferenceConfig
+ * ReferenceConfig，它还是一个泛型
  *
  * @export
  */
@@ -85,7 +85,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     // interface proxy reference
     private transient volatile T ref;
     private transient volatile Invoker<?> invoker;
-    private transient volatile boolean initialized;
+    private transient volatile boolean initialized;  //Java语言的关键字，变量修饰符，如果用transient声明一个实例变量，当对象存储时，它的值不需要维持。换句话来说就是，用transient关键字标记的成员变量不参与序列化过程。
     private transient volatile boolean destroyed;
     @SuppressWarnings("unused")
     private final Object finalizerGuardian = new Object() {
@@ -156,6 +156,14 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         return urls;
     }
 
+    /**
+     * 1、进一步初始化 ReferenceConfig 对象。
+     * 2、校验 ReferenceConfig 对象的配置项。
+     * 3、使用 ReferenceConfig 对象，生成 Dubbo URL 对象数组。
+     * 4、使用 Dubbo URL 对象，应用服务。
+     *
+     * 主方法：获取引用服务
+     */
     public synchronized T get() {
         if (destroyed) {
             throw new IllegalStateException("Already destroyed!");
@@ -183,20 +191,35 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         ref = null;
     }
 
+
+    /**
+     * 初始化
+     */
     private void init() {
-        if (initialized) {
+        if (initialized) {  //已经初始化，直接返回。这个是针对多线程，它是一个volatile
             return;
         }
-        initialized = true;
+        initialized = true;  //将它设置为true, 标志它已经初始化。如果下面有异常，说明下一次一定也有异常，不用再处理
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:reference interface=\"\" /> interface not allow null!");
         }
-        // get consumer's global configuration
+
+        /**
+         * ConsumerConfig, ReferenceConfig属性设置
+         *
+         * 它的属性设置比ServiceConfig少很多
+         */
         checkDefault();
         appendProperties(this);
+
         if (getGeneric() == null && getConsumer() != null) {
-            setGeneric(getConsumer().getGeneric());
+            setGeneric(getConsumer().getGeneric());  //是否为泛化接口
         }
+
+        /**
+         * interfaceClass，它分为泛化与正常的
+         * 如果是正常的接口，校验接口及其中的方法
+         */
         if (ProtocolUtils.isGeneric(getGeneric())) {
             interfaceClass = GenericService.class;
         } else {
@@ -206,8 +229,15 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
-            checkInterfaceAndMethods(interfaceClass, methods);
+            checkInterfaceAndMethods(interfaceClass, methods);  //校验接口与方法，方法要在接口中
         }
+
+        /**
+         * 直连提供者，参考示例==》 直连提供者
+         * 直连提供者为第一优先级，通过 -D 参数指定 ，例如 java -Dcom.alibaba.xxx.XxxService=dubbo://localhost:20890
+         *
+         * resolve为直连，命令行==》 命令行中直连文件 ==》dubbo-resolve.properties 加载后面的两个为Properties,取出interfaceName对应的直连实现
+         */
         String resolve = System.getProperty(interfaceName);
         String resolveFile = null;
         if (resolve == null || resolve.length() == 0) {
@@ -236,6 +266,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 resolve = properties.getProperty(interfaceName);
             }
         }
+
+        /**
+         * 如果直连，给url为直接，并发出warn告警（直连只在测试与开发中使用，不能在生产中使用），它不走注册中心
+         */
         if (resolve != null && resolve.length() > 0) {
             url = resolve;
             if (logger.isWarnEnabled()) {
@@ -246,6 +280,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
         }
+
+        /**
+         * ConsumerConfig不为空，取出ApplicationConfig, ModuleConfig, List<RegistryConfig>, MonitorConfig
+         */
         if (consumer != null) {
             if (application == null) {
                 application = consumer.getApplication();
@@ -260,6 +298,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 monitor = consumer.getMonitor();
             }
         }
+
+        /**
+         * ModuleConfig 不为空， 取出List<RegistryConfig>, MonitorConfig
+         */
         if (module != null) {
             if (registries == null) {
                 registries = module.getRegistries();
@@ -268,6 +310,12 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 monitor = module.getMonitor();
             }
         }
+
+        /**
+         * ApplicationConfig不为空， List<RegistryConfig>, MonitorConfig
+         *
+         * 注意List<RegistryConfig>获取的顺序，ReferenConfig==> ConsumerConfig==> ModuleConfig==> ApplicationConfig
+         */
         if (application != null) {
             if (registries == null) {
                 registries = application.getRegistries();
@@ -276,19 +324,32 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 monitor = application.getMonitor();
             }
         }
+
+        /**
+         * 校验ApplicationConfig并设置属性
+         *
+         * 校验 Stub 和 Mock 相关的配置
+         */
         checkApplication();
         checkStub(interfaceClass);
         checkMock(interfaceClass);
+
+
+        /**
+         * 将属性值放置在map中，为之后的URL做准备
+         *
+         * 有side, pid, revision, methods, interface ...
+         */
         Map<String, String> map = new HashMap<String, String>();
         Map<Object, Object> attributes = new HashMap<Object, Object>();
-        map.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE);
+        map.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE);  //side为consumer
         map.put(Constants.DUBBO_VERSION_KEY, Version.getProtocolVersion());
         map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis()));
         if (ConfigUtils.getPid() > 0) {
             map.put(Constants.PID_KEY, String.valueOf(ConfigUtils.getPid()));
         }
         if (!isGeneric()) {
-            String revision = Version.getVersion(interfaceClass, version);
+            String revision = Version.getVersion(interfaceClass, version);  //版本号
             if (revision != null && revision.length() > 0) {
                 map.put("revision", revision);
             }
@@ -301,6 +362,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 map.put("methods", StringUtils.join(new HashSet<String>(Arrays.asList(methods)), ","));
             }
         }
+
+        /**
+         * 注意下面的优先级
+         */
         map.put(Constants.INTERFACE_KEY, interfaceName);
         appendParameters(map, application);
         appendParameters(map, module);
@@ -313,26 +378,40 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 String retryKey = method.getName() + ".retry";
                 if (map.containsKey(retryKey)) {
                     String retryValue = map.remove(retryKey);
-                    if ("false".equals(retryValue)) {
+                    if ("false".equals(retryValue)) {  //不重试
                         map.put(method.getName() + ".retries", "0");
                     }
                 }
+
+                /**
+                 * 将带有 @Parameter(attribute = true) 配置对象的属性，添加到参数集合
+                 */
                 appendAttributes(attributes, method, prefix + "." + method.getName());
                 checkAndConvertImplicitConfig(method, map, attributes);
             }
         }
 
-        String hostToRegistry = ConfigUtils.getSystemProperty(Constants.DUBBO_IP_TO_REGISTRY);
+        /**
+         * 注册中心的ip
+         */
+        String hostToRegistry = ConfigUtils.getSystemProperty(Constants.DUBBO_IP_TO_REGISTRY);  //以系统环境变量( DUBBO_IP_TO_REGISTRY ) 作为服务注册地址
         if (hostToRegistry == null || hostToRegistry.length() == 0) {
-            hostToRegistry = NetUtils.getLocalHost();
+            hostToRegistry = NetUtils.getLocalHost();  //本地
         } else if (isInvalidLocalHost(hostToRegistry)) {
             throw new IllegalArgumentException("Specified invalid registry ip from property:" + Constants.DUBBO_IP_TO_REGISTRY + ", value:" + hostToRegistry);
         }
-        map.put(Constants.REGISTER_IP_KEY, hostToRegistry);
+        map.put(Constants.REGISTER_IP_KEY, hostToRegistry);  //registry.ip
 
-        //attributes are stored by system context.
-        StaticContext.getSystemContext().putAll(attributes);
+        StaticContext.getSystemContext().putAll(attributes);  //@Parameter(attribute=true)参数放置在系统上下文中，目的是事件通知
+
+        /**
+         * 创建代理(服务引用)  【未完成】
+         */
         ref = createProxy(map);
+
+        /**
+         * 创建ConsumerModel并设置到ApplicationModel的map中，在ServiceConfig中也有这步，只是放置的是ProviderModel
+         */
         ConsumerModel consumerModel = new ConsumerModel(getUniqueServiceName(), this, ref, interfaceClass.getMethods());
         ApplicationModel.initConsumerModel(getUniqueServiceName(), consumerModel);
     }
