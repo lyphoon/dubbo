@@ -40,6 +40,14 @@ public class DubboNamespaceHandler extends NamespaceHandlerSupport {
         Version.checkDuplicate(DubboNamespaceHandler.class);
     }
 
+    /**
+     * 定义了每个 <xsd:element /> 对应的 org.springframework.beans.factory.xml.BeanDefinitionParser
+     *
+     * service 标签使用的是 ServiceBean（继承了ServiceConfig） ，而不是 ServiceConfig ，
+     * reference 表示用的是 ReferenceBean(继承了ReferenceConfig)
+     *
+     * 为什么要使用它，因为在ServiceBean与ReferenceBean实现了InitializingBean，在new之后会调用它的afterPropertiesSet，相当于初始化方法
+     */
     @Override
     public void init() {
         registerBeanDefinitionParser("application", new DubboBeanDefinitionParser(ApplicationConfig.class, true));
