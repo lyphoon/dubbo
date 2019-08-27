@@ -383,6 +383,11 @@ public final class StringUtils {
         return buf.toString();
     }
 
+    /**
+     * 参考StringUtilsTest.testCamelToSplitName()
+     *
+     * 将(abCdEf,"-")转为ab-cd-ef(将每一个大写之前加一个split,第一个除外)
+     */
     public static String camelToSplitName(String camelName, String split) {
         if (camelName == null || camelName.length() == 0) {
             return camelName;
@@ -390,19 +395,19 @@ public final class StringUtils {
         StringBuilder buf = null;
         for (int i = 0; i < camelName.length(); i++) {
             char ch = camelName.charAt(i);
-            if (ch >= 'A' && ch <= 'Z') {
+            if (ch >= 'A' && ch <= 'Z') {  //处理大写
                 if (buf == null) {
                     buf = new StringBuilder();
                     if (i > 0) {
-                        buf.append(camelName.substring(0, i));
+                        buf.append(camelName.substring(0, i)); //将大写之前的先存入buf
                     }
                 }
                 if (i > 0) {
-                    buf.append(split);
+                    buf.append(split);  //如果大写字母不在第一个位置上，加一个split
                 }
-                buf.append(Character.toLowerCase(ch));
+                buf.append(Character.toLowerCase(ch));  //转小写
             } else if (buf != null) {
-                buf.append(ch);
+                buf.append(ch);  //小写直接追加
             }
         }
         return buf == null ? camelName : buf.toString();

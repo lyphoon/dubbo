@@ -39,6 +39,8 @@ import static org.springframework.util.StringUtils.trimArrayElements;
  * @see ServiceAnnotationBeanPostProcessor
  * @see ReferenceAnnotationBeanPostProcessor
  * @since 2.5.9
+ *
+ * dubbo xml解析器(DubboNamespaceHandler)
  */
 public class AnnotationBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
