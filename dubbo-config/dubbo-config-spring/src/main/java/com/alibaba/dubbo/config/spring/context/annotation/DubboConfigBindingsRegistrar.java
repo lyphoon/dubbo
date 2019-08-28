@@ -30,6 +30,9 @@ import org.springframework.util.Assert;
 /**
  * {@link AbstractConfig Dubbo Config} binding Bean registrar for {@link EnableDubboConfigBindings}
  *
+ * 实现 ImportBeanDefinitionRegistrar、EnvironmentAware 接口，处理 @EnableDubboConfigBindings 注解，
+ * 注册相应的 Dubbo AbstractConfig 到 Spring 容器中
+ *
  * @see EnableDubboConfigBindings
  * @see DubboConfigBindingRegistrar
  * @since 2.5.8
@@ -38,28 +41,45 @@ public class DubboConfigBindingsRegistrar implements ImportBeanDefinitionRegistr
 
     private ConfigurableEnvironment environment;
 
+    /**
+     * 在 DubboConfigConfiguration 类中使用
+     *
+     * @EnableDubboConfigBindingsr 导入类。ImportBeanDefinitionRegistrar接口方法，注册Bean，它会在setEnviroment之后调用
+     *
+     * 主要是@EnableDubboConfigBindings内部的多个@EnableDubboConfigBinding元素，
+     * 初始化一个@EnableDubboConfigBinding的导入类DubboConfigBindingRegistrar，将内部@EnableDubboConfigBinding所有元数据
+     * 中的类，注册到Spring中
+     *
+     *  @EnableDubboConfigBinding(prefix = "dubbo.application", type = ApplicationConfig.class)
+     */
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
-
+        //获取@EnableDubboConfigBindings注解对应的元数据
         AnnotationAttributes attributes = AnnotationAttributes.fromMap(
                 importingClassMetadata.getAnnotationAttributes(EnableDubboConfigBindings.class.getName()));
 
+        //获取value数组，在@EnableDubboConfigBindings中，每一个元素为EnableDubboConfigBinding
         AnnotationAttributes[] annotationAttributes = attributes.getAnnotationArray("value");
 
-        DubboConfigBindingRegistrar registrar = new DubboConfigBindingRegistrar();
-        registrar.setEnvironment(environment);
+        DubboConfigBindingRegistrar registrar = new DubboConfigBindingRegistrar();  //EnableDubboConfigBinding接口的@Import
+        registrar.setEnvironment(environment); //设置子DubboConfigBindingRegistrar中的Enviroment
 
         for (AnnotationAttributes element : annotationAttributes) {
-
+            //将每一个子元素通过DubboConfigBindingRegistrar中的reisterBeanDefinitions注册到Spring容器中
             registrar.registerBeanDefinitions(element, registry);
 
         }
     }
 
+    /**
+     * Interface to be implemented by any bean that wishes to be notified of the {@link Environment} that it runs in.
+     *
+     * 获取环境通知
+     */
     @Override
     public void setEnvironment(Environment environment) {
 
-        Assert.isInstanceOf(ConfigurableEnvironment.class, environment);
+        Assert.isInstanceOf(ConfigurableEnvironment.class, environment);  //enviroment是ConfigurableEnviroment的一个实例，不是，内部会抛出异常
 
         this.environment = (ConfigurableEnvironment) environment;
 

@@ -97,6 +97,10 @@ class ServiceBeanNameBuilder {
         return this;
     }
 
+    /**
+     *
+     * ServviceBean:接口名:版本号:组
+     */
     public String build() {
         StringBuilder beanNameBuilder = new StringBuilder("ServiceBean").append(SEPARATOR);
         // Required
@@ -107,6 +111,6 @@ class ServiceBeanNameBuilder {
         // Build and remove last ":"
         String rawBeanName = beanNameBuilder.substring(0, beanNameBuilder.length() - 1);
         // Resolve placeholders
-        return environment.resolvePlaceholders(rawBeanName);
+        return environment.resolvePlaceholders(rawBeanName); //点位符用环境中的变量值替换
     }
 }

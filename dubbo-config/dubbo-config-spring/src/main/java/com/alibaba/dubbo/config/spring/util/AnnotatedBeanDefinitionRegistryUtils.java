@@ -50,13 +50,13 @@ public abstract class AnnotatedBeanDefinitionRegistryUtils {
 
         boolean debugEnabled = logger.isDebugEnabled();
 
-        AnnotatedBeanDefinitionReader reader = new AnnotatedBeanDefinitionReader(registry);
+        AnnotatedBeanDefinitionReader reader = new AnnotatedBeanDefinitionReader(registry);  //创建 AnnotatedBeanDefinitionReader 对象
 
         if (debugEnabled) {
             logger.debug(registry.getClass().getSimpleName() + " will register annotated classes : " + Arrays.asList(annotatedClasses) + " .");
         }
 
-        reader.register(annotatedClasses);
+        reader.register(annotatedClasses);  //注册到Spring容器中
 
     }
 }

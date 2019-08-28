@@ -33,6 +33,8 @@ import java.lang.annotation.Target;
  * <p>
  * Note : {@link EnableDubbo} must base on Spring Framework 4.2 and above
  *
+ *  是 @EnableDubboConfig 和 @DubboComponentScan 的组合注解, spring版本要在4.2上
+ *
  * @see DubboComponentScan
  * @see EnableDubboConfig
  * @since 2.5.8
@@ -41,8 +43,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-@EnableDubboConfig
-@DubboComponentScan
+@EnableDubboConfig  //开启DubboConfig
+@DubboComponentScan  //扫描Dubbo对应的@Service, @Reference Bean
 public @interface EnableDubbo {
 
     /**
@@ -51,16 +53,21 @@ public @interface EnableDubbo {
      * Use {@link #scanBasePackageClasses()} for a type-safe alternative to String-based
      * package names.
      *
+     * 配置@DubboComponentScan注解，扫描的包, 它是一个数组
+     *
      * @return the base packages to scan
      * @see DubboComponentScan#basePackages()
      */
     @AliasFor(annotation = DubboComponentScan.class, attribute = "basePackages")
     String[] scanBasePackages() default {};
 
+
     /**
      * Type-safe alternative to {@link #scanBasePackages()} for specifying the packages to
      * scan for annotated @Service classes. The package of each class specified will be
      * scanned.
+     *
+     * 配置 @DubboComponentScan 注解，扫描的类， 是一个数组
      *
      * @return classes from the base packages to scan
      * @see DubboComponentScan#basePackageClasses
@@ -71,6 +78,8 @@ public @interface EnableDubbo {
 
     /**
      * It indicates whether {@link AbstractConfig} binding to multiple Spring Beans.
+     *
+     * 配置 @EnableDubboConfig 注解，配置是否绑定到多个 Spring Bean 上
      *
      * @return the default value is <code>false</code>
      * @see EnableDubboConfig#multiple()

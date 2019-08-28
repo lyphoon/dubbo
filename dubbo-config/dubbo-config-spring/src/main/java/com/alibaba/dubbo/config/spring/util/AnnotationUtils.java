@@ -227,6 +227,8 @@ public abstract class AnnotationUtils {
     /**
      * Get the {@link Annotation} attributes
      *
+     * 获取所有的属性
+     *
      * @param annotation           specified {@link Annotation}
      * @param propertyResolver     {@link PropertyResolver} instance, e.g {@link Environment}
      * @param ignoreDefaultValue   whether ignore default value or not
@@ -237,9 +239,9 @@ public abstract class AnnotationUtils {
     public static Map<String, Object> getAttributes(Annotation annotation, PropertyResolver propertyResolver,
                                                     boolean ignoreDefaultValue, String... ignoreAttributeNames) {
 
-        Set<String> ignoreAttributeNamesSet = new HashSet<String>(arrayToList(ignoreAttributeNames));
+        Set<String> ignoreAttributeNamesSet = new HashSet<String>(arrayToList(ignoreAttributeNames));  //不获取的
 
-        Map<String, Object> attributes = getAnnotationAttributes(annotation);
+        Map<String, Object> attributes = getAnnotationAttributes(annotation);  //注解的所有属性
 
         Map<String, Object> actualAttributes = new LinkedHashMap<String, Object>();
 

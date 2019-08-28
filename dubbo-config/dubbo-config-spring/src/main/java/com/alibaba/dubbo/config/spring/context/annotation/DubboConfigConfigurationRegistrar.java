@@ -30,6 +30,10 @@ import static com.alibaba.dubbo.config.spring.util.AnnotatedBeanDefinitionRegist
 /**
  * Dubbo {@link AbstractConfig Config} {@link ImportBeanDefinitionRegistrar register}
  *
+ * 实现 ImportBeanDefinitionRegistrar 接口，处理 @EnableDubboConfig 注解，注册相应的 DubboConfigConfiguration 到 Spring 容器中
+ *
+ * 定义一个ImportBeanDefinitionRegistrar的实现类，然后在有@Configuration注解的配置类上使用@Import导入
+ *
  * @see EnableDubboConfig
  * @see DubboConfigConfiguration
  * @see Ordered
@@ -37,19 +41,31 @@ import static com.alibaba.dubbo.config.spring.util.AnnotatedBeanDefinitionRegist
  */
 public class DubboConfigConfigurationRegistrar implements ImportBeanDefinitionRegistrar {
 
+
+    /**
+     * Register bean definitions as necessary based on the given annotation metadata of the importing {@code @Configuration} class.
+     *
+     * 它允许我们直接通过BeanDefinitionRegistry对象注册bean. 参考：https://www.iteye.com/blog/elim-2430132
+     */
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
-
+        /**
+         * 获取@EnableDubboConfig注解的属性值
+         *
+         * AnnotationAttributes继承处LikedHashMap, AnnotationMetadata为注解元数据
+         *
+         * 获取注解名为EnableDubboConfig.class.getName()的所有元数据，它返回一个Map，将返回的map封装为AnnotationAttributes
+         */
         AnnotationAttributes attributes = AnnotationAttributes.fromMap(
                 importingClassMetadata.getAnnotationAttributes(EnableDubboConfig.class.getName()));
 
         boolean multiple = attributes.getBoolean("multiple");
 
         // Single Config Bindings
-        registerBeans(registry, DubboConfigConfiguration.Single.class);
+        registerBeans(registry, DubboConfigConfiguration.Single.class);  // 注册DubboConfigConfiguration.Single Bean
 
         if (multiple) { // Since 2.6.6 https://github.com/apache/incubator-dubbo/issues/3193
-            registerBeans(registry, DubboConfigConfiguration.Multiple.class);
+            registerBeans(registry, DubboConfigConfiguration.Multiple.class);  //注册DubboConfigConfiguration.Multiple Bean
         }
     }
 }

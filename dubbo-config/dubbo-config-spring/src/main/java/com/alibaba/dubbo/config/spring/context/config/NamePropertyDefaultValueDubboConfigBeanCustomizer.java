@@ -42,7 +42,7 @@ public class NamePropertyDefaultValueDubboConfigBeanCustomizer implements DubboC
     @Override
     public void customize(String beanName, AbstractConfig dubboConfigBean) {
 
-        PropertyDescriptor propertyDescriptor = getPropertyDescriptor(dubboConfigBean.getClass(), PROPERTY_NAME);
+        PropertyDescriptor propertyDescriptor = getPropertyDescriptor(dubboConfigBean.getClass(), PROPERTY_NAME);  //name属性
 
         if (propertyDescriptor != null) { // "name" property is present
 

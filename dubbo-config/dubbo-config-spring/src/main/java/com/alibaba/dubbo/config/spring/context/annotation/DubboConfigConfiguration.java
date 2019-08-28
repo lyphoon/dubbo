@@ -30,6 +30,8 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Dubbo {@link AbstractConfig Config} {@link Configuration}
  *
+ * Dubbo AbstractConfig 配置类
+ *
  * @see Configuration
  * @see EnableDubboConfigBindings
  * @see EnableDubboConfigBinding
@@ -46,6 +48,8 @@ public class DubboConfigConfiguration {
 
     /**
      * Single Dubbo {@link AbstractConfig Config} Bean Binding
+     *
+     * 没有ServiceConfig与ReferenceConfig,它们在每一个@Service与@Refrence上
      */
     @EnableDubboConfigBindings({
             @EnableDubboConfigBinding(prefix = "dubbo.application", type = ApplicationConfig.class),
@@ -64,7 +68,7 @@ public class DubboConfigConfiguration {
      * Multiple Dubbo {@link AbstractConfig Config} Bean Binding
      */
     @EnableDubboConfigBindings({
-            @EnableDubboConfigBinding(prefix = "dubbo.applications", type = ApplicationConfig.class, multiple = true),
+            @EnableDubboConfigBinding(prefix = "dubbo.applications", type = ApplicationConfig.class, multiple = true),  //多了一个mutiple
             @EnableDubboConfigBinding(prefix = "dubbo.modules", type = ModuleConfig.class, multiple = true),
             @EnableDubboConfigBinding(prefix = "dubbo.registries", type = RegistryConfig.class, multiple = true),
             @EnableDubboConfigBinding(prefix = "dubbo.protocols", type = ProtocolConfig.class, multiple = true),

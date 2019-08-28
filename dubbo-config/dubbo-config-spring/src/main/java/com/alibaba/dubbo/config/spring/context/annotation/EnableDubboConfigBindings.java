@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import(DubboConfigBindingsRegistrar.class)
+@Import(DubboConfigBindingsRegistrar.class)  //表明使用 DubboConfigBindingsRegistrar 类进行导入
 public @interface EnableDubboConfigBindings {
 
     /**
@@ -42,6 +42,6 @@ public @interface EnableDubboConfigBindings {
      *
      * @return non-null
      */
-    EnableDubboConfigBinding[] value();
+    EnableDubboConfigBinding[] value();  //内部的元素是一个EnableDubboConfigBinding数组
 
 }

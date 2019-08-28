@@ -43,7 +43,7 @@ import java.lang.annotation.Target;
 public @interface DubboComponentScan {
 
     /**
-     * Alias for the {@link #basePackages()} attribute. Allows for more concise annotation
+     * Alias for the {@link #basePackages()} attribute.(basePackages别名) Allows for more concise annotation
      * declarations e.g.: {@code @DubboComponentScan("org.my.pkg")} instead of
      * {@code @DubboComponentScan(basePackages="org.my.pkg")}.
      *

@@ -44,6 +44,10 @@ import java.util.concurrent.ConcurrentMap;
  * {@link org.springframework.beans.factory.config.BeanPostProcessor} implementation
  * that Consumer service {@link Reference} annotated fields
  *
+ *  扫描 @Reference 注解的类，创建对应的 Spring BeanDefinition 对象，从而创建 Dubbo Reference Bean 对象
+ *
+ *  AnnotationInjectedBeanPostProcessor<Reference>：ReferenceAnnotationBeanPostProcessor 实现的就是 支持 @Reference 注解的属性注入。
+ *
  * @since 2.5.7
  */
 public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBeanPostProcessor<Reference>
@@ -103,6 +107,12 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         return Collections.unmodifiableMap(injectedMethodReferenceBeanCache);
     }
 
+
+    /**
+     * 主方法，获得要注入的 @Reference Bean
+     *
+     * 为什么只获取了一个
+     */
     @Override
     protected Object doGetInjectedBean(Reference reference, Object bean, String beanName, Class<?> injectedType,
                                        InjectionMetadata.InjectedElement injectedElement) throws Exception {
@@ -174,6 +184,9 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         }
     }
 
+    /**
+     * 主方法
+     */
     @Override
     protected String buildInjectedObjectCacheKey(Reference reference, Object bean, String beanName,
                                                  Class<?> injectedType, InjectionMetadata.InjectedElement injectedElement) {
