@@ -23,12 +23,14 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * ProxyFactory. (API/SPI, Singleton, ThreadSafe)
+ *
+ * 代理工厂接口
  */
 @SPI("javassist")
 public interface ProxyFactory {
 
     /**
-     * create proxy.
+     * create proxy. 创建 Proxy ，在引用服务调用。
      *
      * @param invoker
      * @return proxy
@@ -46,7 +48,10 @@ public interface ProxyFactory {
     <T> T getProxy(Invoker<T> invoker, boolean generic) throws RpcException;
 
     /**
-     * create invoker.
+     * create invoker.  创建 Invoker ，在暴露服务时调用。
+     *
+     * 服务类：类会被封装成为一个 AbstractProxyInvoker 实例，并新生成一个 Exporter 实例。这样当网络通讯层收到一个请求后，
+     * 会找到对应的 Exporter 实例，并调用它所对应的 AbstractProxyInvoker 实例，从而真正调用了服务提供者的代码
      *
      * @param <T>
      * @param proxy

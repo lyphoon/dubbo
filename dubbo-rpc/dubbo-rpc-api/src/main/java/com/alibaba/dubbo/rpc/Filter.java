@@ -20,6 +20,9 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * Filter. (SPI, Singleton, ThreadSafe)
+ *
+ * 过滤器接口，和我们平时理解的 javax.servlet.Filter 基本一致
+ *
  */
 @SPI
 public interface Filter {
@@ -34,8 +37,8 @@ public interface Filter {
      * return result;
      * </code>
      *
-     * @param invoker    service
-     * @param invocation invocation.
+     * @param invoker    service  调用者
+     * @param invocation invocation. 调用参数
      * @return invoke result.
      * @throws RpcException
      * @see com.alibaba.dubbo.rpc.Invoker#invoke(Invocation)
