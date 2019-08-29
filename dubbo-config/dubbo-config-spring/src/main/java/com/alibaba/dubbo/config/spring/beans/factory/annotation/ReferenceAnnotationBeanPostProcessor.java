@@ -111,43 +111,62 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
     /**
      * 主方法，获得要注入的 @Reference Bean
      *
-     * 为什么只获取了一个
+     * ??为什么只获取了一个
      */
     @Override
     protected Object doGetInjectedBean(Reference reference, Object bean, String beanName, Class<?> injectedType,
                                        InjectionMetadata.InjectedElement injectedElement) throws Exception {
 
-        String referencedBeanName = buildReferencedBeanName(reference, injectedType);
+        String referencedBeanName = buildReferencedBeanName(reference, injectedType);  //获取Reference Bean名，与Service Bean是同一套规则
 
-        ReferenceBean referenceBean = buildReferenceBeanIfAbsent(referencedBeanName, reference, injectedType, getClassLoader());
+        /**
+         * ReferenceBean继承ReferenceConfig, 实现了InitializingBean， 在初始化时设置各个Conifg(如ApplicationConfig)到ReferenceBean中
+         */
+        ReferenceBean referenceBean = buildReferenceBeanIfAbsent(referencedBeanName, reference, injectedType, getClassLoader()); //创建（获得） ReferenceBean 对象
 
         cacheInjectedReferenceBean(referenceBean, injectedElement);
 
-        Object proxy = buildProxy(referencedBeanName, referenceBean, injectedType);
+        Object proxy = buildProxy(referencedBeanName, referenceBean, injectedType);  //创建 Proxy 代理对象
 
         return proxy;
     }
 
     private Object buildProxy(String referencedBeanName, ReferenceBean referenceBean, Class<?> injectedType) {
         InvocationHandler handler = buildInvocationHandler(referencedBeanName, referenceBean);
-        Object proxy = Proxy.newProxyInstance(getClassLoader(), new Class[]{injectedType}, handler);
+        Object proxy = Proxy.newProxyInstance(getClassLoader(), new Class[]{injectedType}, handler);  //代理类
         return proxy;
     }
 
+    /**
+     * InvocationHandler 为java动态代理接口
+     *
+     *
+     */
     private InvocationHandler buildInvocationHandler(String referencedBeanName, ReferenceBean referenceBean) {
 
+        /**
+         * ReferenceBeanInvocationHandler implements InvocationHandler, 实现了动态代理接口，处理ReferenceBean代理
+         *
+         * 从缓存map中取ReferenceBeanInvocationHandler
+         */
         ReferenceBeanInvocationHandler handler = localReferenceBeanInvocationHandlerCache.get(referencedBeanName);
 
         if (handler == null) {
-            handler = new ReferenceBeanInvocationHandler(referenceBean);
+            handler = new ReferenceBeanInvocationHandler(referenceBean); //创建一个
         }
 
-        if (applicationContext.containsBean(referencedBeanName)) { // Is local @Service Bean or not ?
+        /**
+         * 代理分为本地与远程
+         *
+         * 判断如果 applicationContext 中已经初始化，说明是本地的 @Service Bean ，则添加到 localReferenceBeanInvocationHandlerCache 缓存中。
+         */
+        if (applicationContext.containsBean(referencedBeanName)) { // Is local @Service Bean or not , 是否为本地， 本地在applicatinContext中能拿到
             // ReferenceBeanInvocationHandler's initialization has to wait for current local @Service Bean has been exported.
+            //等到本地的 @Service Bean 暴露后，再进行初始化, 等后续的，通过 Spring 事件监听的功能，进行实现, onApplicationEvent」
             localReferenceBeanInvocationHandlerCache.put(referencedBeanName, handler);
         } else {
             // Remote Reference Bean should initialize immediately
-            handler.init();
+            handler.init();  //判断若果 applicationContext 中未初始化，说明是远程的 @Service Bean 对象，则立即进行初始化
         }
 
         return handler;
@@ -155,23 +174,28 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
 
     private static class ReferenceBeanInvocationHandler implements InvocationHandler {
 
-        private final ReferenceBean referenceBean;
+        private final ReferenceBean referenceBean;  //引用对象
 
-        private Object bean;
+        private Object bean;  //ref
 
         private ReferenceBeanInvocationHandler(ReferenceBean referenceBean) {
-            this.referenceBean = referenceBean;
+            this.referenceBean = referenceBean;  //设置
         }
 
+        /**
+         * Processes a method invocation on a proxy instance and return the result
+         *
+         * 代理要实现的方法，
+         */
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             Object result = null;
             try {
                 if (bean == null) { // If the bean is not initialized, invoke init()
                     // issue: https://github.com/apache/incubator-dubbo/issues/3429
-                    init();
+                    init();  //没有初始化，进行初始化
                 }
-                result = method.invoke(bean, args);
+                result = method.invoke(bean, args);  //调用代理对象的invoke
             } catch (InvocationTargetException e) {
                 // re-throws the actual Exception.
                 throw e.getTargetException();
@@ -180,7 +204,7 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         }
 
         private void init() {
-            this.bean = referenceBean.get();
+            this.bean = referenceBean.get();  //获取ReferenceBean中的ref, ReferenceConfig中：ref = createProxy(map);
         }
     }
 
@@ -200,22 +224,30 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
 
     private String buildReferencedBeanName(Reference reference, Class<?> injectedType) {
 
+        /**
+         * 使用的就是 ServiceBeanNameBuilder 的逻辑，即和 Dubbo Service Bean 的名字，是 同一套。这个也非常合理
+         *
+         * ServiceAnnotationBeanPostProcessor.registerServiceBean()->generateServiceBeanName()->ServiceBeanNameBuilder.create(service, interfaceClass, environment)
+         */
         ServiceBeanNameBuilder builder = ServiceBeanNameBuilder.create(reference, injectedType, getEnvironment());
 
-        return getEnvironment().resolvePlaceholders(builder.build());
+        return getEnvironment().resolvePlaceholders(builder.build());  //使用enviroment解决占位符
     }
 
+    /**
+     * 获取 Reference Bean
+     */
     private ReferenceBean buildReferenceBeanIfAbsent(String referencedBeanName, Reference reference,
                                                      Class<?> referencedType, ClassLoader classLoader)
             throws Exception {
 
-        ReferenceBean<?> referenceBean = referenceBeanCache.get(referencedBeanName);
+        ReferenceBean<?> referenceBean = referenceBeanCache.get(referencedBeanName);  //从map中取出referencedBeanName对应的ReferenceBean
 
-        if (referenceBean == null) {
+        if (referenceBean == null) {  //map中为空，也就是还没有创建过这个bean，创建并存入map中
             ReferenceBeanBuilder beanBuilder = ReferenceBeanBuilder
                     .create(reference, classLoader, applicationContext)
                     .interfaceClass(referencedType);
-            referenceBean = beanBuilder.build();
+            referenceBean = beanBuilder.build();  //已经设置了属性值到ReferenceBean中了
             referenceBeanCache.put(referencedBeanName, referenceBean);
         }
 
@@ -224,9 +256,9 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
 
     private void cacheInjectedReferenceBean(ReferenceBean referenceBean,
                                             InjectionMetadata.InjectedElement injectedElement) {
-        if (injectedElement.getMember() instanceof Field) {
+        if (injectedElement.getMember() instanceof Field) {  //字段
             injectedFieldReferenceBeanCache.put(injectedElement, referenceBean);
-        } else if (injectedElement.getMember() instanceof Method) {
+        } else if (injectedElement.getMember() instanceof Method) {  //方法
             injectedMethodReferenceBeanCache.put(injectedElement, referenceBean);
         }
     }
@@ -236,27 +268,37 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         this.applicationContext = applicationContext;
     }
 
+    /**
+     * 监听Spring容器事件
+     */
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof ServiceBeanExportedEvent) {
+            /**
+             * 如果事件为Service Bean暴露事件, ServiceBean中有一个暴露方法export，内部会发起ServiceBeanExportedEvent事件
+             */
             onServiceBeanExportEvent((ServiceBeanExportedEvent) event);
         } else if (event instanceof ContextRefreshedEvent) {
-            onContextRefreshedEvent((ContextRefreshedEvent) event);
+            /**
+             * ContextRefreshedEvent: Event raised when an {@code ApplicationContext} gets initialized or refreshed.
+             * 在上下文初始化或者刷新时
+             */
+            onContextRefreshedEvent((ContextRefreshedEvent) event);  //内部没有处理逻辑
         }
     }
 
     private void onServiceBeanExportEvent(ServiceBeanExportedEvent event) {
-        ServiceBean serviceBean = event.getServiceBean();
+        ServiceBean serviceBean = event.getServiceBean();  //获取事件中的ServiceBean
         initReferenceBeanInvocationHandler(serviceBean);
     }
 
     private void initReferenceBeanInvocationHandler(ServiceBean serviceBean) {
         String serviceBeanName = serviceBean.getBeanName();
         // Remove ServiceBean when it's exported
-        ReferenceBeanInvocationHandler handler = localReferenceBeanInvocationHandlerCache.remove(serviceBeanName);
+        ReferenceBeanInvocationHandler handler = localReferenceBeanInvocationHandlerCache.remove(serviceBeanName);  //从 localReferenceBeanInvocationHandlerCache 缓存中，移除
         // Initialize
         if (handler != null) {
-            handler.init();
+            handler.init();  //初始化（本地中，serviceBeanName与Reference中相同）
         }
     }
 

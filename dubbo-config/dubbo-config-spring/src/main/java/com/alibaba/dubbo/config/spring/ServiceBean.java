@@ -46,7 +46,9 @@ import java.util.Map;
 import static com.alibaba.dubbo.config.spring.util.BeanFactoryUtils.addApplicationListener;
 
 /**
- * ServiceFactoryBean
+ * ServiceBean 继承ServcieConfig, 实现InitializingBean
+ *
+ * 在初始化时将各个如ApplicationConfig设置到ServiceBean中
  *
  * @export
  */
@@ -259,12 +261,12 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     }
 
     /**
-     * @since 2.6.5
+     * @since 2.6.5 暴露
      */
     @Override
     public void export() {
         super.export();
-        // Publish ServiceBeanExportedEvent
+        // 发布 ServiceBeanExportedEvent 事件
         publishExportEvent();
     }
 

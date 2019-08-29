@@ -291,7 +291,7 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
                 buildServiceBeanDefinition(service, interfaceClass, annotatedServiceBeanName);  //BeanDefinition
 
         // ServiceBean Bean name
-        String beanName = generateServiceBeanName(service, interfaceClass, annotatedServiceBeanName);  //Bean名
+        String beanName = generateServiceBeanName(service, interfaceClass, annotatedServiceBeanName);  //Service Bean名
 
         if (scanner.checkCandidate(beanName, serviceBeanDefinition)) { // check duplicated candidate bean
             registry.registerBeanDefinition(beanName, serviceBeanDefinition);  //注册到Spring容器中，也就是注册了一个ServiceBean类到Spring容器中，并且已经设置了属性值

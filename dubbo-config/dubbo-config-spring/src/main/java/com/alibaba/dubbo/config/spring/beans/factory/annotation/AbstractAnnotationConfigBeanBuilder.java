@@ -71,11 +71,11 @@ abstract class AbstractAnnotationConfigBeanBuilder<A extends Annotation, B exten
      */
     public final B build() throws Exception {
 
-        checkDependencies();
+        checkDependencies();  //检查依赖，内部为空，还是一个private
 
-        B bean = doBuild();
+        B bean = doBuild();  //构造Config, 只有一个子类ReferenceBeanBuilder, 构造ReferenceBean， 抽象方法
 
-        configureBean(bean);
+        configureBean(bean);  //配置Bean
 
         if (logger.isInfoEnabled()) {
             logger.info("The bean[type:" + bean.getClass().getSimpleName() + "] has been built.");
@@ -99,17 +99,17 @@ abstract class AbstractAnnotationConfigBeanBuilder<A extends Annotation, B exten
 
     protected void configureBean(B bean) throws Exception {
 
-        preConfigureBean(annotation, bean);
+        preConfigureBean(annotation, bean);  //前置配置，抽象类
 
-        configureRegistryConfigs(bean);
+        configureRegistryConfigs(bean);  //配置RegistryConfig
 
-        configureMonitorConfig(bean);
+        configureMonitorConfig(bean);  //配置MonitorConfig
 
-        configureApplicationConfig(bean);
+        configureApplicationConfig(bean);  //配置ApplicationConfig
 
-        configureModuleConfig(bean);
+        configureModuleConfig(bean);  //配置ModuleConfig
 
-        postConfigureBean(annotation, bean);
+        postConfigureBean(annotation, bean);  //后置配置
 
     }
 
@@ -118,7 +118,7 @@ abstract class AbstractAnnotationConfigBeanBuilder<A extends Annotation, B exten
 
     private void configureRegistryConfigs(B bean) {
 
-        String[] registryConfigBeanIds = resolveRegistryConfigBeanNames(annotation);
+        String[] registryConfigBeanIds = resolveRegistryConfigBeanNames(annotation);  //resolveRegistryConfigBeanNames 抽象方法
 
         List<RegistryConfig> registryConfigs = getBeans(applicationContext, registryConfigBeanIds, RegistryConfig.class);
 

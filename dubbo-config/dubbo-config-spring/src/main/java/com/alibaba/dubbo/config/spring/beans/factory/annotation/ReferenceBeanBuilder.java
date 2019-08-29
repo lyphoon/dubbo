@@ -41,6 +41,10 @@ import static org.springframework.util.StringUtils.commaDelimitedListToStringArr
 /**
  * {@link ReferenceBean} Builder
  *
+ * ReferenceBean 的构建器
+ *
+ * AbstractAnnotationConfigBeanBuilder：泛型 A 对应 @Reference 注解，泛型 B 对应 ReferenceBean 类。
+ *
  * @since 2.5.7
  */
 class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference, ReferenceBean> {
@@ -103,13 +107,16 @@ class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference
     @Override
     protected ReferenceBean doBuild() {
         return new ReferenceBean<Object>();
-    }
+    }  //直接new一个对象
 
+    /**
+     * 前置配置
+     */
     @Override
     protected void preConfigureBean(Reference reference, ReferenceBean referenceBean) {
         Assert.notNull(interfaceClass, "The interface class must set first!");
-        DataBinder dataBinder = new DataBinder(referenceBean);
-        // Register CustomEditors for special fields
+        DataBinder dataBinder = new DataBinder(referenceBean);  //创建DataBinder
+        // Register CustomEditors for special fields, 注册指定属性的自定义 Editor
         dataBinder.registerCustomEditor(String.class, "filter", new StringTrimmerEditor(true));
         dataBinder.registerCustomEditor(String.class, "listener", new StringTrimmerEditor(true));
         dataBinder.registerCustomEditor(Map.class, "parameters", new PropertyEditorSupport() {
@@ -131,7 +138,7 @@ class ReferenceBeanBuilder extends AbstractAnnotationConfigBeanBuilder<Reference
         });
 
         // Bind annotation attributes
-        dataBinder.bind(new AnnotationPropertyValuesAdapter(reference, applicationContext.getEnvironment(), IGNORE_FIELD_NAMES));
+        dataBinder.bind(new AnnotationPropertyValuesAdapter(reference, applicationContext.getEnvironment(), IGNORE_FIELD_NAMES));  //将属性值绑定到ReferenceBean上，除了IGNORE_FIELD_NAMES外
 
     }
 

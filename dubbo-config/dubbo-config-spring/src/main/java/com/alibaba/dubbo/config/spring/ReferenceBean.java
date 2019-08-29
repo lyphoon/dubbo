@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ReferenceFactoryBean
+ * ReferenceBean， 实现了InitializingBean，在初始化时将各个Config(如ApplicationConfig)设置到ReferenceBean中
  *
  * @export
  */
