@@ -41,6 +41,8 @@ public interface Invoker<T> extends Node {
     /**
      * invoke：调用方法
      *
+     * 返回的Result为返回域， 参数为Invocation为会话域
+     *
      * @param invocation
      * @return result
      * @throws RpcException
