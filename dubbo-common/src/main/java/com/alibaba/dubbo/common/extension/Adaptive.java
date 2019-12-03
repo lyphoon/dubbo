@@ -27,6 +27,8 @@ import java.lang.annotation.Target;
 /**
  * Provide helpful information for {@link ExtensionLoader} to inject dependency extension instance.
  *
+ *  参考：https://www.jianshu.com/p/dc616814ce98
+ *
  * @see ExtensionLoader
  * @see URL
  */

@@ -26,6 +26,8 @@ import java.util.List;
 
 /**
  * AdaptiveExtensionFactory
+ *
+ * 自动生成拼接实现 ExtensionLoader.createAdaptiveExtension()
  */
 @Adaptive
 public class AdaptiveExtensionFactory implements ExtensionFactory {
