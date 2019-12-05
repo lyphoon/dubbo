@@ -150,8 +150,19 @@ public class ExtensionLoader<T> {
                     ") is not extension, because WITHOUT @" + SPI.class.getSimpleName() + " Annotation!");
         }
 
+        //ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS, 缓存的是每一个接口对就的扩展加载器
         ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         if (loader == null) {
+
+            /**
+             * private ExtensionLoader(Class<?> type) {
+             *      //设置扩展加载器对应的接口
+             *     this.type = type;
+             *
+             *     //objectFactory 是指用SPI获取还是Spring获取
+             *     objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
+             * }
+             */
             EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader<T>(type));
             loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         }
@@ -220,22 +231,24 @@ public class ExtensionLoader<T> {
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> exts = new ArrayList<T>();
         List<String> names = values == null ? new ArrayList<String>(0) : Arrays.asList(values);
-        if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {
-            getExtensionClasses();
+
+        if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {  // Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY ==> "-default"
+            getExtensionClasses();  //加载接口的所有实现类，并进行相应内容的缓存
             for (Map.Entry<String, Activate> entry : cachedActivates.entrySet()) {
                 String name = entry.getKey();
                 Activate activate = entry.getValue();
-                if (isMatchGroup(group, activate.group())) {
-                    T ext = getExtension(name);
+                if (isMatchGroup(group, activate.group())) {  //匹配group
+                    T ext = getExtension(name);  // getExtension会实例化相应的类
                     if (!names.contains(name)
                             && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)
-                            && isActive(activate, url)) {
+                            && isActive(activate, url)) {  //匹配name
                         exts.add(ext);
                     }
                 }
             }
-            Collections.sort(exts, ActivateComparator.COMPARATOR);
+            Collections.sort(exts, ActivateComparator.COMPARATOR);  //@Activate 中可以设置顺序
         }
+
         List<T> usrs = new ArrayList<T>();
         for (int i = 0; i < names.size(); i++) {
             String name = names.get(i);
@@ -243,7 +256,7 @@ public class ExtensionLoader<T> {
                     && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)) {
                 if (Constants.DEFAULT_KEY.equals(name)) {
                     if (!usrs.isEmpty()) {
-                        exts.addAll(0, usrs);
+                        exts.addAll(0, usrs); //也就是默认名时，usrs加在exts的最前面
                         usrs.clear();
                     }
                 } else {
@@ -696,7 +709,7 @@ public class ExtensionLoader<T> {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     final int ci = line.indexOf('#');
-                    if (ci >= 0) line = line.substring(0, ci);
+                    if (ci >= 0) line = line.substring(0, ci);  //除掉一行中的注释
                     line = line.trim();
                     if (line.length() > 0) {  //跳过当前被注释掉的情况，例如 #spring=xxxxxxxxx
                         try {
@@ -725,7 +738,7 @@ public class ExtensionLoader<T> {
     }
 
     private void loadClass(Map<String, Class<?>> extensionClasses, java.net.URL resourceURL, Class<?> clazz, String name) throws NoSuchMethodException {
-        if (!type.isAssignableFrom(clazz)) {   //class不能赋给type接口，也就是判断clazz是否为type子类
+        if (!type.isAssignableFrom(clazz)) {   //class不能赋给type接口，也就是判断clazz是否为type子类或者实现类
             throw new IllegalStateException("Error when load extension class(interface: " +
                     type + ", class line: " + clazz.getName() + "), class "
                     + clazz.getName() + "is not subtype of interface.");
@@ -765,7 +778,7 @@ public class ExtensionLoader<T> {
                     }
                     Class<?> c = extensionClasses.get(n);
                     if (c == null) {
-                        extensionClasses.put(n, clazz); //缓存名称与对应的实现类
+                        extensionClasses.put(n, clazz); //缓存名称与对应的实现类, extensionClasses不包括自适应与包装类
                     } else if (c != clazz) {
                         throw new IllegalStateException("Duplicate extension " + type.getName() + " name " + n + " on " + c.getName() + " and " + clazz.getName());
                     }
